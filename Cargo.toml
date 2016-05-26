@@ -1,0 +1,6 @@
+[package]
+name = "copying_gc"
+version = "0.1.0"
+authors = ["Zhen Zhang <izgzhen@gmail.com>"]
+
+[dependencies]
