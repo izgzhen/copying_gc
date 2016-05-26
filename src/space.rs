@@ -6,8 +6,8 @@ use std::mem;
 
 use bitmap::BitMap;
 use trace::*;
-use root::*;
-use heap::*;
+use ptr::*;
+use space_ptr::*;
 
 pub struct Space {
     /// How many double words
@@ -66,23 +66,23 @@ impl Space {
         p.realloc_to(self)
     }
 
-    pub fn set_mark<T: Trace + Clone + ?Sized + 'static>(&mut self, p: &SpacePtr<T>) {
+    pub fn set_mark<T: Trace + Clone + 'static>(&mut self, p: &SpacePtr<T>) {
         self.mark_bits.set(p.bit_idx());
     }
 
-    pub fn unset_mark<T: Trace + Clone + ?Sized + 'static>(&mut self, p: &SpacePtr<T>) {
+    pub fn unset_mark<T: Trace + Clone + 'static>(&mut self, p: &SpacePtr<T>) {
         self.mark_bits.unset(p.bit_idx());
     }
 
-    pub fn marked(&mut self, p: &SpacePtrTrait) -> bool {
+    pub fn marked(&mut self, p: &HeapTrait) -> bool {
         self.mark_bits.get(p.bit_idx())
     }
 
-    pub fn set_forward<T: Trace + Clone + ?Sized + 'static>(&mut self, p: &SpacePtr<T>) {
+    pub fn set_forward<T: Trace + Clone + 'static>(&mut self, p: &SpacePtr<T>) {
         self.forward_bits.set(p.bit_idx());
     }
 
-    pub fn forward(&mut self, ptr: &mut SpacePtrTrait) {
+    pub fn forward(&mut self, ptr: &mut HeapTrait) {
         let idx = ptr.bit_idx().clone();
         if self.forward_bits.get(idx) {
             unsafe {

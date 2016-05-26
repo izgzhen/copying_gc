@@ -2,7 +2,7 @@
 
 use space::*;
 use trace::*;
-use root::*;
+use ptr::*;
 
 const DEFAULT_SPACE_SIZE: usize = 1024;
 

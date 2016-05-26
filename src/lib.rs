@@ -7,9 +7,9 @@ mod bitmap;
 mod space;
 mod runtime;
 mod trace;
-mod root;
-mod heap;
+mod ptr;
+mod space_ptr;
 
-pub use trace::Traceable;
-pub use root::{Root, gc_now};
-pub use heap::{SpacePtr, SpacePtrTrait};
+pub use trace::{Traceable, HeapTrait};
+pub use ptr::{Root, gc_now, Heap};
+

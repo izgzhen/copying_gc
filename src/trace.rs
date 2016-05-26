@@ -1,6 +1,6 @@
 //! Trace trait
 
-use heap::*;
+use space_ptr::*;
 
 use std::cell::RefCell;
 
@@ -15,15 +15,17 @@ pub trait Trace {
     fn root(&mut self);
 
     /// Traverse the sub-fields
-    fn subfields(&mut self) -> Vec<&mut SpacePtrTrait>;
+    fn subfields(&mut self) -> Vec<&mut HeapTrait>;
 }
+
+pub trait HeapTrait where Self: Trace + SpacePtrTrait { }
 
 impl Traceable for i64 {
-    fn trace_with<'a, Tracer>(&'a mut self, _: Tracer) where Tracer: FnMut(&'a mut SpacePtrTrait) { }
+    fn trace_with<'a, Tracer>(&'a mut self, _: Tracer) where Tracer: FnMut(&'a mut HeapTrait) { }
 }
 
-pub trait Traceable {
-    fn trace_with<'a, Tracer>(&'a mut self, Tracer) where Tracer: FnMut(&'a mut SpacePtrTrait);
+pub trait Traceable where Self: Clone + 'static {
+    fn trace_with<'a, Tracer>(&'a mut self, Tracer) where Tracer: FnMut(&'a mut HeapTrait);
 }
 
 impl<T: Traceable> Trace for T {
@@ -40,7 +42,7 @@ impl<T: Traceable> Trace for T {
         self.trace_with(|field| field.unroot());
     }
 
-    fn subfields(&mut self) -> Vec<&mut SpacePtrTrait> {
+    fn subfields(&mut self) -> Vec<&mut HeapTrait> {
         let ret = RefCell::new(vec![]);
 
         self.trace_with(|field| {

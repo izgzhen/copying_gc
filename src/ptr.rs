@@ -1,9 +1,9 @@
-//! Rooted pointer
+//! Pointers
 
 use space::*;
 use trace::*;
 use runtime::*;
-use heap::*;
+use space_ptr::*;
 
 use std::cell::RefCell;
 
@@ -21,9 +21,10 @@ pub fn gc_now() {
     })
 }
 
+/// On-stack pointers
 pub struct Root<T: Trace + Clone + 'static>(*mut Rooted<T>);
 
-impl<T: Trace + Clone + 'static> Root<T> {
+impl<T: Traceable> Root<T> {
     pub fn new(t: T) -> Root<T> {
         RUNTIME.with(|_rt| {
             let mut rt = _rt.borrow_mut();
@@ -32,25 +33,12 @@ impl<T: Trace + Clone + 'static> Root<T> {
         })
     }
 
-    fn from_rooted(ptr: *mut Rooted<T>) -> Root<T> {
-        Root(ptr)
-    }
-
     pub fn borrow(&self) -> &T {
         unsafe { (*self.0).borrow() }
     }
 
-    pub fn to_space_ptr(&self) -> SpacePtr<T> {
-        unsafe {
-            (*self.0).space_ptr.clone()
-        }
-    }
-}
-
-
-impl<T: Trace + Clone + 'static> Clone for Root<T> {
-    fn clone(&self) -> Self {
-        Root(self.0)
+    pub fn to_heap(&self) -> Heap<T> {
+        unsafe { Heap((*self.0).space_ptr.clone()) }
     }
 }
 
@@ -83,8 +71,6 @@ impl<T: Trace + Clone + 'static> Rooted<T> {
     }
 }
 
-
-
 impl<T: Trace + Clone + 'static> RootedTrait for Rooted<T> {
     fn rooted(&self) -> bool { self.rooted }
 
@@ -106,7 +92,36 @@ impl<T: Trace + Clone + 'static> Trace for Rooted<T> {
     fn mark(&mut self) { self.space_ptr.mark(); }
     fn root(&mut self) { self.space_ptr.root(); }
     fn unroot(&mut self) { self.space_ptr.unroot(); }
-    fn subfields(&mut self)  -> Vec<&mut SpacePtrTrait> {
+    fn subfields(&mut self)  -> Vec<&mut HeapTrait> {
         self.space_ptr.subfields()
     }
 }
+
+/// On-heap pointers
+#[derive(Clone)]
+pub struct Heap<T: Traceable>(SpacePtr<T>);
+
+impl<T: Traceable> Heap<T> {
+    pub fn borrow(&self) -> &T {
+        self.0.borrow()
+    }
+}
+
+impl<T: Traceable> SpacePtrTrait for Heap<T> {
+    fn inner(&self) -> *mut (Trace + 'static) { self.0.inner() }
+    fn bit_idx(&self) -> usize { self.0.bit_idx() }
+    fn raw_inner(&self) -> *mut u8 { self.0.raw_inner() }
+    fn set_raw_inner(&mut self, p: *mut u8) { self.0.set_raw_inner(p) }
+}
+
+impl<T: Traceable> Trace for Heap<T> {
+    fn mark(&mut self) { self.0.mark(); }
+    fn root(&mut self) { self.0.root(); }
+    fn unroot(&mut self) { self.0.unroot(); }
+    fn subfields(&mut self)  -> Vec<&mut HeapTrait> {
+        self.0.subfields()
+    }
+}
+
+impl<T: Traceable> HeapTrait for Heap<T> { }
+

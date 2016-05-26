@@ -2,5 +2,8 @@
 name = "copying_gc"
 version = "0.1.0"
 authors = ["Zhen Zhang <izgzhen@gmail.com>"]
+description = "Simple copying garbage collector"
+license = "MIT"
+repository = "https://github.com/izgzhen/copying_gc"
 
 [dependencies]
